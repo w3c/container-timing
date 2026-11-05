@@ -261,6 +261,8 @@ When an {{HTMLElement}} with a {{HTMLElement/containerTiming}} content attribute
 2. The user agent must initialize an empty [=painted region=] for the [=container root=].
 3. The user agent must track all paint operations within the [=container root=]'s subtree, excluding any [=ignored subtrees=].
 
+Note: Only paints that happen after the element becomes a [=container root=] are reported. Content in its subtree that painted earlier, for example before the {{HTMLElement/containerTiming}} attribute was added, is not reported to it unless it paints again. Authors should set the attribute before the content paints, such as in the initial markup or before inserting the subtree.
+
 Removing the containertiming attribute {#removing-containertiming}
 ------------------------------------------------------
 
