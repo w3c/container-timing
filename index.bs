@@ -112,7 +112,7 @@ A <dfn export>container root</dfn> is a {{HTMLElement}} that has the {{HTMLEleme
 
 An <dfn export>ignored subtree</dfn> is a subtree rooted at a {{HTMLElement}} with the {{HTMLElement/containerTimingIgnore}} attribute.
 
-A <dfn export>painted region</dfn> is a region (collection of rectangles) representing all the painted portions of a [=container root=] accumulated since it was first observed, expressed in CSS pixels. The painted region is maintained in the viewport coordinate space. If the [=container root=] element moves (e.g. due to layout changes or {{moveBefore()}}), previously accumulated rectangles are not adjusted — the region continues to expand in viewport coordinates.
+A <dfn export>painted region</dfn> is a region (collection of rectangles) representing all the painted portions of a [=container root=] accumulated since it was first observed, expressed in CSS pixels. The painted region is maintained in the viewport coordinate space. If the [=container root=] element moves due to layout changes, previously accumulated rectangles are not adjusted — the region continues to expand in viewport coordinates.
 
 The <dfn export>container timing API</dfn> provides timing information about when container roots are painted to the screen.
 
@@ -278,7 +278,7 @@ Disconnecting a container root {#disconnecting-container-root}
 ------------------------------------------------------
 
 <div algorithm="disconnect container root">
-When a [=container root=] {{HTMLElement}} |element| is disconnected from the document, perform the following steps:
+When a [=container root=] {{HTMLElement}} |element| is disconnected from the document, or moved with {{moveBefore()}}, perform the following steps:
 
 1. Let |document| be |element|'s [=Node/node document=].
 2. If |document|'s [=container root records map=] contains an entry for |element|, remove that entry.
