@@ -20,9 +20,12 @@ urlPrefix: https://w3c.github.io/paint-timing/; spec: PAINT-TIMING;
     type: dfn; url: #paint-timing-info; text: paint timing info;
     type: dfn; for: PaintTimingMixin; url: #painttimingmixin-paint-timing-info; text: paint timing info;
     type: dfn; url: #exposed-for-paint-timing; text: exposed for paint timing;
+    type: dfn; url: #mark-paint-timing; text: mark paint timing;
     type: dfn; url: #pending-image-record; text: pending image record;
     type: dfn; for: pending image record; url: #pending-image-record-element; text: element;
     type: dfn; url: #set-of-owned-text-nodes; text: set of owned text nodes;
+urlPrefix: https://w3c.github.io/element-timing/; spec: ELEMENT-TIMING;
+    type: dfn; url: #report-element-timing; text: report element timing;
 urlPrefix: https://w3c.github.io/IntersectionObserver/; spec: INTERSECTION-OBSERVER;
     type: dfn; url: #calculate-intersection-rect-algo; text: intersection rect algorithm;
 </pre>
@@ -205,6 +208,23 @@ Right after step 1, we add the following steps:
     1. If |event|'s {{Event/type}} is <code>scroll</code>, set |target|'s [=relevant global object=]'s [=Window/has dispatched scroll event=] to true.
     2. If |event|'s {{Event/type}} is one of <code>keydown</code>, <code>mousedown</code>, <code>pointerdown</code>, or <code>click</code>, set |target|'s [=relevant global object=]'s [=Window/has dispatched input event=] to true.
 
+Modifications to the Paint Timing specification {#modifications-to-paint-timing}
+--------------------------------------------------------------------------------
+
+<em>This section will be removed once the [[PAINT-TIMING]] specification has been modified.</em>
+
+We modify the [=mark paint timing=] algorithm as follows.
+
+Right after the step that fills |paintedTextNodes|, we add the following steps:
+
+1. For each element painted in this rendering update, run [=handle element painted for container timing=] given |document|, |paintTimingInfo|, the element, and its intersection rectangle.
+2. Let |containerEntries| be the result of [=emit container timing entries=] given |document|.
+
+In |flushPaintTimings|, right after the step that runs [=report element timing=], we add the following step:
+
+1. [=list/For each=] |entry| of |containerEntries|, [=queue the PerformanceEntry=] |entry|.
+
+Note: Container roots, ignored subtrees and identifiers are resolved, and the entries created, against the DOM at the rendering update. Changes made before the frame is presented, such as removing {{HTMLElement/containerTiming}}, adding {{HTMLElement/containerTimingIgnore}}, or moving or disconnecting the element, do not affect them. Only the presentation time is set later.
 
 
 Extensions to the {{HTMLElement}} Interface {#extensions-to-element}
@@ -291,7 +311,7 @@ Handle Element Painted for Container Timing {#handle-element-painted}
 ----------------------------------------------------------------------
 
 <div algorithm="handle element painted for container timing">
-When an element is painted and the user agent needs to handle container timing updates, given a {{Document}} |document|, a [=PaintTimingMixin/paint timing info=] |paintTimingInfo|, an {{HTMLElement}} |element|, and a {{DOMRectReadOnly}} |intersectionRect|, perform the following steps:
+To <dfn>handle element painted for container timing</dfn> given a {{Document}} |document|, a [=PaintTimingMixin/paint timing info=] |paintTimingInfo|, an {{HTMLElement}} |element|, and a {{DOMRectReadOnly}} |intersectionRect|, perform the following steps:
 
 1. Let |window| be |document|'s [=relevant global object=].
 2. If either of |window|'s [=Window/has dispatched scroll event=] or [=Window/has dispatched input event=] is true, return.
@@ -312,16 +332,18 @@ Emit Container Timing Entries {#emit-container-timing-entries}
 --------------------------------------------------------------
 
 <div algorithm="emit container timing entries">
-When asked to emit container timing entries for a {{Document}} |document|, perform the following steps. This should be called once per frame after all paint operations have been processed:
+To <dfn>emit container timing entries</dfn> for a {{Document}} |document|, perform the following steps:
 
-1. If |document| does not have pending container timing changes, return.
-2. [=map/For each=] |containerRoot| → |record| of |document|'s <a>container root records map</a>:
+1. Let |entries| be an empty [=list=].
+2. If |document| does not have pending container timing changes, return |entries|.
+3. [=map/For each=] |containerRoot| → |record| of |document|'s <a>container root records map</a>:
     1. If |record|'s [=Container Timing Record/hasPendingChanges=] is false, continue.
-    2. <a>Create a Container Timing entry</a> given |record| and |containerRoot|.
+    2. [=list/Append=] the result of <a>create a Container Timing entry</a> given |record| and |containerRoot| to |entries|.
     3. Set |record|'s [=Container Timing Record/hasPendingChanges=] to false.
     4. Set |record|'s [=Container Timing Record/lastNewPaintedAreaElement=] to null.
     5. Set |record|'s [=Container Timing Record/lastNewPaintedAreaSize=] to 0.
-3. Mark the {{Document}} as no longer having pending container timing changes.
+4. Mark the {{Document}} as no longer having pending container timing changes.
+5. Return |entries|.
         </div>
 
 Note: Unlike some other paint timing APIs that may emit multiple entries per painted element, Container Timing accumulates painted regions for each [=container root=] and emits at most one {{PerformanceContainerTiming}} entry per container root per frame. This batching approach is more efficient and provides a holistic view of the container's paint state.
@@ -413,7 +435,8 @@ In order to <dfn>create a Container Timing entry</dfn> given a [=Container Timin
     * {{PerformanceContainerTiming/size}} set to the total area, in square CSS pixels, of |record|'s [=Container Timing Record/paintedRegion=]
     * {{PerformanceContainerTiming/lastPaintedElement}} set to |record|'s [=Container Timing Record/lastNewPaintedAreaElement=]
     * {{PerformanceContainerTiming/rootElement}} set to |containerRoot|
-2. <a>Queue the PerformanceEntry</a> |entry|.
+    * [=PaintTimingMixin/paint timing info=] set to |record|'s [=Container Timing Record/lastNewPaintedAreaPaintTimingInfo=]
+2. Return |entry|.
     </div>
 
 Security and Privacy Considerations {#security-privacy}
