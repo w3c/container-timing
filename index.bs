@@ -291,7 +291,7 @@ Handle Element Painted for Container Timing {#handle-element-painted}
 ----------------------------------------------------------------------
 
 <div algorithm="handle element painted for container timing">
-When an element is painted and the user agent needs to handle container timing updates, given a {{Document}} |document|, a [=PaintTimingMixin/paint timing info=] |paintTimingInfo|, an {{HTMLElement}} |element|, and a {{DOMRectReadOnly}} |intersectionRect|, perform the following steps:
+To <dfn>handle element painted for container timing</dfn> given a {{Document}} |document|, a [=PaintTimingMixin/paint timing info=] |paintTimingInfo|, an {{HTMLElement}} |element|, and a {{DOMRectReadOnly}} |intersectionRect|, perform the following steps:
 
 1. Let |window| be |document|'s [=relevant global object=].
 2. If either of |window|'s [=Window/has dispatched scroll event=] or [=Window/has dispatched input event=] is true, return.
@@ -304,7 +304,9 @@ When an element is painted and the user agent needs to handle container timing u
 9. Mark the {{Document}} as having pending container timing changes.
         </div>
 
-Note: This algorithm is invoked for each image or text node that paints. The intersection rectangle should be computed using the <a>intersection rect algorithm</a> with the element as target and viewport as root, intersected with the visual viewport. For text nodes, the intersection rectangle is the smallest rectangle containing the border boxes of all text nodes in the <a>set of owned text nodes</a>, intersected with the visual viewport.
+The user agent must run [=handle element painted for container timing=] for each image and text element on its first contentful paint, and again if the element is removed or moved and then painted again.
+
+Note: The intersection rectangle should be computed using the <a>intersection rect algorithm</a> with the element as target and viewport as root, intersected with the visual viewport. For text nodes, the intersection rectangle is the smallest rectangle containing the border boxes of all text nodes in the <a>set of owned text nodes</a>, intersected with the visual viewport.
 
 Note: Container Timing is intended to measure the initial rendering of content. Once the user has scrolled or interacted with the document, paints are no longer recorded, as they are likely to be a result of that scroll or interaction (for example, content scrolled into view or revealed by a click) rather than the page loading. Entries already pending for the current frame are still emitted.
 
