@@ -112,6 +112,8 @@ A <dfn export>container root</dfn> is a {{HTMLElement}} that has the {{HTMLEleme
 
 An <dfn export>ignored subtree</dfn> is a subtree rooted at a {{HTMLElement}} with the {{HTMLElement/containerTimingIgnore}} attribute.
 
+Note: Only {{HTMLElement}}s can be [=container roots=] or start an [=ignored subtree=]. Other elements, such as SVG or MathML elements, still contribute their paints to an ancestor [=container root=], so they can be reported as {{PerformanceContainerTiming/lastPaintedElement}}. This matches the <code>element</code> attribute of <code>LargestContentfulPaint</code> and <code>PerformanceElementTiming</code>.
+
 A <dfn export>painted region</dfn> is a region (collection of rectangles) representing all the painted portions of a [=container root=] accumulated since it was first observed, expressed in CSS pixels. The painted region is maintained in the viewport coordinate space. If the [=container root=] element moves (e.g. due to layout changes or {{moveBefore()}}), previously accumulated rectangles are not adjusted — the region continues to expand in viewport coordinates.
 
 The <dfn export>container timing API</dfn> provides timing information about when container roots are painted to the screen.
@@ -127,7 +129,7 @@ interface PerformanceContainerTiming : PerformanceEntry {
     readonly attribute DOMRectReadOnly intersectionRect;
     readonly attribute unsigned long long size;
     readonly attribute DOMHighResTimeStamp firstRenderTime;
-    readonly attribute HTMLElement? lastPaintedElement;
+    readonly attribute Element? lastPaintedElement;
     readonly attribute HTMLElement? rootElement;
 
     [Default] object toJSON();
@@ -145,7 +147,7 @@ Each {{PerformanceContainerTiming}} object has these associated concepts:
 * A <dfn for="ContainerTiming">size</dfn> initially set to 0.
 * A <dfn for="ContainerTiming">firstRenderTime</dfn> initially set to 0.
 * A <dfn for="ContainerTiming">renderTime</dfn> initially set to 0.
-* A <dfn for="ContainerTiming">lastPaintedElement</dfn> containing the associated {{HTMLElement}}, initially set to <code>null</code>.
+* A <dfn for="ContainerTiming">lastPaintedElement</dfn> containing the associated {{Element}}, initially set to <code>null</code>.
 * A <dfn for="ContainerTiming">rootElement</dfn> containing the associated {{HTMLElement}} that is the container root, initially set to <code>null</code>.
 
 The {{PerformanceEntry/entryType}} attribute's getter must return the {{DOMString}} <code>"container"</code>.
@@ -238,7 +240,7 @@ A <dfn export>Container Timing Record</dfn> has these associated concepts:
 * An <dfn>identifier</dfn> which is a {{DOMString}}.
 * A <dfn>paintedRegion</dfn> which is a [=painted region=], initially empty.
 * A <dfn>lastNewPaintedAreaPaintTimingInfo</dfn> which is a [=PaintTimingMixin/paint timing info=], initially unset.
-* A <dfn>lastNewPaintedAreaElement</dfn> which is an {{HTMLElement}} or null, initially null.
+* A <dfn>lastNewPaintedAreaElement</dfn> which is an {{Element}} or null, initially null.
 * A <dfn>lastNewPaintedAreaSize</dfn> which is a number, initially 0.
 * A <dfn>hasPendingChanges</dfn> which is a boolean, initially false.
     </div>
@@ -291,7 +293,7 @@ Handle Element Painted for Container Timing {#handle-element-painted}
 ----------------------------------------------------------------------
 
 <div algorithm="handle element painted for container timing">
-When an element is painted and the user agent needs to handle container timing updates, given a {{Document}} |document|, a [=PaintTimingMixin/paint timing info=] |paintTimingInfo|, an {{HTMLElement}} |element|, and a {{DOMRectReadOnly}} |intersectionRect|, perform the following steps:
+When an element is painted and the user agent needs to handle container timing updates, given a {{Document}} |document|, a [=PaintTimingMixin/paint timing info=] |paintTimingInfo|, an {{Element}} |element|, and a {{DOMRectReadOnly}} |intersectionRect|, perform the following steps:
 
 1. Let |window| be |document|'s [=relevant global object=].
 2. If either of |window|'s [=Window/has dispatched scroll event=] or [=Window/has dispatched input event=] is true, return.
@@ -341,14 +343,14 @@ To <dfn>get the parent container root element</dfn> given an {{HTMLElement}} |el
 Contributes to Container Timing {#contributes-to-container-timing}
 --------------------------------
 
-An {{HTMLElement}} <dfn export lt="Contribute to container timing">contributes to the container timing</dfn> of a [=container root=] if all of the following are true:
+An {{Element}} <dfn export lt="Contribute to container timing">contributes to the container timing</dfn> of a [=container root=] if all of the following are true:
 
 - It is a descendant of the [=container root=].
 - It is not within an [=ignored subtree=].
 - It is not in a shadow tree.
 
 <div algorithm="determine contribution to container timing">
-To determine whether an {{HTMLElement}} |element| contributes to the container timing of a [=container root=] |containerRoot|:
+To determine whether an {{Element}} |element| contributes to the container timing of a [=container root=] |containerRoot|:
 
 1. If |element| is null, return false.
 2. If |element| is in a shadow tree, return false.
@@ -362,10 +364,10 @@ Getting the container root Element {#getting-container-root-element}
 --------------------------------------
 
 <div algorithm="get the container root element">
-To <dfn>get the container root element</dfn> given an {{HTMLElement}} |element|, perform the following steps:
+To <dfn>get the container root element</dfn> given an {{Element}} |element|, perform the following steps:
 
 1. If |element| is null, return null.
-2. If |element|'s {{HTMLElement/containerTiming}} content attribute is present, return |element|.
+2. If |element| is an {{HTMLElement}} and |element|'s {{HTMLElement/containerTiming}} content attribute is present, return |element|.
 3. If |element|'s parentElement is not null, return the result of <a>get the container root element</a> given |element|'s parentElement.
 4. Return null.
     </div>
@@ -374,7 +376,7 @@ Maybe Update Last New Painted Area {#maybe-update-last-new-painted-area}
 -----------------------------------
 
 <div algorithm="maybe update last new painted area">
-To <dfn>maybe update the last new painted area</dfn> for a [=Container Timing Record=] |record| given a {{Document}} |document|, a [=container root=] {{HTMLElement}} |containerRoot|, an {{HTMLElement}} |element|, a {{DOMRectReadOnly}} |enclosingRect|, and a [=PaintTimingMixin/paint timing info=] |paintTimingInfo|, perform the following steps:
+To <dfn>maybe update the last new painted area</dfn> for a [=Container Timing Record=] |record| given a {{Document}} |document|, a [=container root=] {{HTMLElement}} |containerRoot|, an {{Element}} |element|, a {{DOMRectReadOnly}} |enclosingRect|, and a [=PaintTimingMixin/paint timing info=] |paintTimingInfo|, perform the following steps:
 
 1. Let |paintedRegion| be |record|'s [=Container Timing Record/paintedRegion=].
 2. If |paintedRegion| fully contains |enclosingRect|, return.
